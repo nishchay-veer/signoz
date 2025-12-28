@@ -98,6 +98,7 @@ describe('API Monitoring Utils', () => {
 			const rowData = {
 				'http.method': 'GET',
 				'http.status_code': '200',
+				// eslint-disable-next-line sonarjs/no-duplicate-string
 				'service.name': 'api-service',
 				// Fields that should be filtered out
 				data: 'someValue',
@@ -106,6 +107,7 @@ describe('API Monitoring Utils', () => {
 
 			const groupBy = [
 				{
+					// eslint-disable-next-line sonarjs/no-duplicate-string
 					id: 'group-by-1',
 					// eslint-disable-next-line sonarjs/no-duplicate-string
 					key: 'http.method',
@@ -120,6 +122,7 @@ describe('API Monitoring Utils', () => {
 				},
 				{
 					id: 'group-by-3',
+					// eslint-disable-next-line sonarjs/no-duplicate-string
 					key: 'service.name',
 					dataType: DataTypes.String,
 					type: 'tag',
@@ -227,6 +230,58 @@ describe('API Monitoring Utils', () => {
 			expect(result).toBeDefined();
 			expect(result?.op).toBe('AND');
 			expect(result?.items).toHaveLength(0);
+		});
+
+		it('should exclude aggregation column A (Num of Calls) from filters', () => {
+			const rowData = {
+				'http.method': 'GET',
+				'service.name': 'api-service',
+				A: 150,
+			};
+
+			const groupBy = [
+				{
+					id: 'group-by-1',
+					key: 'http.method',
+					dataType: DataTypes.String,
+					type: '',
+				},
+				{
+					id: 'group-by-2',
+					key: 'service.name',
+					dataType: DataTypes.String,
+					type: 'tag',
+				},
+			];
+
+			// Act
+			const result = getGroupByFiltersFromGroupByValues(
+				rowData,
+				groupBy as BaseAutocompleteData[],
+			);
+
+			expect(result).toBeDefined();
+			expect(result?.op).toBe('AND');
+
+			expect(result?.items?.some((item) => item.key && item.key.key === 'A')).toBe(
+				false,
+			);
+
+			// Should include the valid attribute keys
+			expect(
+				result?.items?.some(
+					(item) =>
+						item.key && item.key.key === 'http.method' && item.value === 'GET',
+				),
+			).toBe(true);
+			expect(
+				result?.items?.some(
+					(item) =>
+						item.key &&
+						item.key.key === 'service.name' &&
+						item.value === 'api-service',
+				),
+			).toBe(true);
 		});
 	});
 
